@@ -37,7 +37,7 @@ public class ThriftStore {
         // method to enter the box
         public void enter() {
             try {
-                mutex.aquire(); // aquire semaphore to go in
+                mutex.acquire(); // aquire semaphore to go in
             }
             catch (Exception e) {
                 e.printStackTrace(System.out);
@@ -62,15 +62,50 @@ public class ThriftStore {
 
     // class defining features and methods of section
     // TODO Section -- name, num items; getName, getNum, enter (aquire), exit (release), stock, purchase
-    public static class Section(){
+    public static class Section() {
         public Semaphore sect_mutex = new Semaphore(1);
         public String section_name;
         public int num_items;
+        public Section[] sections;
 
         // Constructor to initalize each section
         Section(String name, int items){
             this.section_name = name;
             this.num_items = items;
+        }
+
+        // get section name
+        public String getSectionName() {
+            return section_name;
+        }
+
+        // get number of items 
+        public int getNumItems() {
+            return num_items;
+        }        
+
+        // method to enter the section
+        public void enterSect() {
+            try {
+                sect_mutex.acquire();
+            }
+            catch (Exception e) {
+                e.printStackTrace(System.out);
+            }
+        }
+
+        // method to exit the section
+        public void exitSect() {
+            sect_mutex.release();
+        }
+
+        // method to find the section
+        public Section findSection(String sectionVisit) {
+            for (Section section : sections) {
+                if (section.getSectionName().equals(section_name)) {
+                    return section;
+                }
+            }
         }
 
     }
@@ -141,17 +176,28 @@ public class ThriftStore {
     // TODO
     class Customer implements Runnable {
         private final int id;
+        private Section[] sections;
 
-        public Customer(int id) {
+        public Customer(int id, Section[] sections) {
             this.id = id;
+            this.sections = sections;
         }
 
         @Override
         public void run() {
             while (true) {
+                // choose random section to visit
+                String sectionVisit = SECTION_NAMES[random.nextInt(SECTION_NAMES.length)];
+
+                // find the section object corresponding to the chosen section name
+                Section section = section.findSection(sectionVisit);
+
                 // customer enters a section
+                section.enterSect();
                 // purchase is triggered -- if empty it does nothing, if has items it makes purchase
+                
                 // customer exits
+                section.exitSect();
             }
         }
     } 
