@@ -19,7 +19,6 @@ public class ThriftStore {
 
     // Define variables to keep track of sections and items
     private static Box box = new Box(SECTION_NAMES);
-    private static ConcurrentHashMap<String, Integer> inventory = new ConcurrentHashMap<>(); 
 
     // TODO could have inventory be a list of Section
     
@@ -63,7 +62,7 @@ public class ThriftStore {
 
     // class defining features and methods of section
     // TODO Section -- name, num items; getName, getNum, enter (aquire), exit (release), stock, purchase
-    public Section(){
+    public static class Section(){
         public Semaphore sect_mutex = new Semaphore(1);
         public String section_name;
         public int num_items;
@@ -98,14 +97,16 @@ public class ThriftStore {
             box.addItem(section, items); // putting items into the box
         }
 
-        System.out.print("<" + ticks + "> <Assistant> Deposit_of_itmes : ");
-        for (Entry<String, Integer> item : inventory.entrySet()){
+        // TODO Thread ID
+        System.out.print("<" + ticks + "> <Thread ID> Deposit_of_items : ");
+        for (Entry<String, Integer> item : box.items){
             String section = entry.getKey();
             int num_items = entry.getValue();
-            System.out.print(section + " = " + num_items + ", "); 
+            if (num_items > 0){
+                System.out.print(section + " = " + num_items + ", "); 
+            }
         }
         System.out.println();
-
     }
 
     // in charge of incrementing ticks
