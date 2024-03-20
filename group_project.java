@@ -203,10 +203,11 @@ public class ThriftStore {
                 // customer enters a section
                 section.enterSect();
 
-                // TODO purchase is triggered -- if empty it does nothing, if has items it makes purchase
+                // purchase is triggered -- if empty it does nothing, if has items it makes purchase
                 // decrement num items in section
                 if (section.num_items > 0) {
                     section.num_items--;
+                    System.out.println("<" + ticks + ">" + "<" + Thread.currentThread().threadId() + ">" + "Collected_from_section : " + sectionVisit + "Waited_ticks : "); // TODO figure this waited ticks thing out
                 }
                 
                 // customer exits
