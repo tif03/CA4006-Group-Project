@@ -1,6 +1,8 @@
 import java.util.concurrent.*;
 import java.util.Random;
 
+// TODO figure out all the print statements
+
 public class ThriftStore {
     private static int ticks = 1; // clock
 
@@ -17,10 +19,13 @@ public class ThriftStore {
 
     private Random random = new Random();
 
-    // Define variables to keep track of sections and items
-    private static Box box = new Box(SECTION_NAMES);
 
-    // TODO could have inventory be a list of Section
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    
+    // Define global variables to keep track of sections and items
+    private static Box box = new Box(SECTION_NAMES);
+    private static Store store = new Store(new ArrayList<>());
     
     // class defining features and methods of the box
     private static class Box {
@@ -61,12 +66,10 @@ public class ThriftStore {
     }
 
     // class defining features and methods of section
-    // TODO Section -- name, num items; getName, getNum, enter (aquire), exit (release), stock, purchase
     public static class Section() {
         public Semaphore sect_mutex = new Semaphore(1);
         public String section_name;
         public int num_items;
-        public Section[] sections;
 
         // Constructor to initalize each section
         Section(String name, int items){
@@ -82,7 +85,7 @@ public class ThriftStore {
         // get number of items 
         public int getNumItems() {
             return num_items;
-        }        
+        }  
 
         // method to enter the section
         public void enterSect() {
@@ -99,18 +102,30 @@ public class ThriftStore {
             sect_mutex.release();
         }
 
-        // method to find the section
-        public Section findSection(String sectionVisit) {
-            for (Section section : sections) {
-                if (section.getSectionName().equals(section_name)) {
-                    return section;
-                }
+    }
+
+    // class defining thrift store
+    public static class Store(){
+        public List<Section> sections; // list of sections
+
+        Store(List<Section> sect){
+            for (String section : SECTION_NAMES){
+                Section sect = new Section(section, 5); // initialize every section to 5 items
+                this.sections.add(sect); 
             }
         }
 
+        public Section getSection(String sect_name){
+            for (Section sect : this.sections){
+                if (sect.getSectionName.equals(sect_name)){
+                    return sect;
+                }
+            }
+        }
     }
 
 
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
     //method to make delivery -- it only populates the box
@@ -132,7 +147,7 @@ public class ThriftStore {
             box.addItem(section, items); // putting items into the box
         }
 
-        // TODO Thread ID
+        // TODO figure out Thread ID
         System.out.print("<" + ticks + "> <Thread ID> Deposit_of_items : ");
         for (Entry<String, Integer> item : box.items){
             String section = entry.getKey();
@@ -144,6 +159,7 @@ public class ThriftStore {
         System.out.println();
     }
 
+    // TODO figure out if this actually works
     // in charge of incrementing ticks
     public void simulate() {
         while (ticks <= TOTAL_TICKS_PER_DAY) { // terminate after a day
@@ -170,17 +186,24 @@ public class ThriftStore {
 
     }
 
+    public Section findSection(String sect_name){
+        for (Section section : store){
+            if (section.getSectionName.equals(sect_name)){
+                return section;
+            }
+        }
+    }
 
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
     // TODO
     class Customer implements Runnable {
         private final int id;
-        private Section[] sections;
 
-        public Customer(int id, Section[] sections) {
+        public Customer(int id) {
             this.id = id;
-            this.sections = sections;
         }
 
         @Override
@@ -194,7 +217,8 @@ public class ThriftStore {
 
                 // customer enters a section
                 section.enterSect();
-                // purchase is triggered -- if empty it does nothing, if has items it makes purchase
+
+                // TODO purchase is triggered -- if empty it does nothing, if has items it makes purchase
                 
                 // customer exits
                 section.exitSect();
