@@ -148,7 +148,7 @@ public class ThriftStore {
         }
 
         // TODO figure out Thread ID
-        System.out.print("<" + ticks + "> <Thread ID> Deposit_of_items : ");
+        System.out.print("<" + ticks + ">" + "<Thread_Id>" + "Deposit_of_items : ");
         for (Entry<String, Integer> item : box.items){
             String section = entry.getKey();
             int num_items = entry.getValue();
@@ -202,6 +202,8 @@ public class ThriftStore {
     class Customer implements Runnable {
         private final int id;
 
+        public long threadId = Thread.currentThread().getId();
+
         public Customer(int id) {
             this.id = id;
         }
@@ -219,6 +221,10 @@ public class ThriftStore {
                 section.enterSect();
 
                 // TODO purchase is triggered -- if empty it does nothing, if has items it makes purchase
+                // decrement num items in section
+                if (section.num_items > 0) {
+                    section.num_items--;
+                }
                 
                 // customer exits
                 section.exitSect();
@@ -229,6 +235,8 @@ public class ThriftStore {
     // TODO
     class Assistant implements Runnable {
         private static ConcurrentHashMap<String, Integer> assistant_inventory = new ConcurrentHashMap<>();
+
+        public long threadId = Thread.currentThread().getId();
 
         // initialize the assistant -- inventory is 0
         public Assistant() {
