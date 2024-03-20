@@ -1,5 +1,7 @@
 import java.util.concurrent.*;
 import java.util.Random;
+import java.util.List;
+import java.util.Map.Entry;
 
 // TODO figure out all the print statements
 
@@ -14,6 +16,7 @@ public class ThriftStore {
     private static final int AVERAGE_DELIVERY_INTERVAL = 100;
     private static final int AVERAGE_PURCHASE_INTERVAL = 10;
     private static final int MAX_ITEMS_PER_DELIVERY = 10;
+    private static final int MAX_ITEMS_ASSISTANT_CARRY = 10;
 
     private static final int NUM_CUSTOMERS = 6;
 
@@ -28,7 +31,7 @@ public class ThriftStore {
     private static Store store = new Store(new ArrayList<>());
     
     // class defining features and methods of the box
-    private static class Box {
+    public class Box {
         public Semaphore mutex = new Semaphore(1);
         public ConcurrentHashMap<String, Integer> items = new ConcurrentHashMap<>();
 
@@ -66,7 +69,7 @@ public class ThriftStore {
     }
 
     // class defining features and methods of section
-    public static class Section() {
+    public class Section {
         public Semaphore sect_mutex = new Semaphore(1);
         public String section_name;
         public int num_items;
@@ -105,10 +108,10 @@ public class ThriftStore {
     }
 
     // class defining thrift store
-    public static class Store(){
-        public List<Section> sections; // list of sections
+    public class Store {
+        private List<Section> sections = new ArrayList<Section>(); // list of sections
 
-        Store(List<Section> sect){
+        Store(){
             for (String section : SECTION_NAMES){
                 Section sect = new Section(section, 5); // initialize every section to 5 items
                 this.sections.add(sect); 
@@ -185,7 +188,7 @@ public class ThriftStore {
     class Customer implements Runnable {
         private final int id;
 
-        public long threadId = Thread.currentThread().threadId();
+        public long getId = Thread.currentThread().getId();
 
         public Customer(int id) {
             this.id = id;
@@ -198,16 +201,19 @@ public class ThriftStore {
                 String sectionVisit = SECTION_NAMES[random.nextInt(SECTION_NAMES.length)];
 
                 // find the section object corresponding to the chosen section name
-                Section section = section.findSection(sectionVisit);
+                Section section = findSection(sectionVisit);
 
                 // customer enters a section
+                int start_time = ticks;
                 section.enterSect();
 
                 // purchase is triggered -- if empty it does nothing, if has items it makes purchase
                 // decrement num items in section
                 if (section.num_items > 0) {
+                    Thread.sleep(TICK_DURATION_MILLISECONDS); // customer takes 1 tick to grab item
                     section.num_items--;
-                    System.out.println("<" + ticks + ">" + "<" + Thread.currentThread().threadId() + ">" + "Collected_from_section : " + sectionVisit + "Waited_ticks : "); // TODO figure this waited ticks thing out
+                    int finish_time = ticks;
+                    System.out.println("<" + ticks + ">" + "<" + Thread.currentThread().getId() + "> Customer = " + this.id  + " Collected_from_section : " + sectionVisit + "Waited_ticks : " + (finish_time - start_time));
                 }
                 
                 // customer exits
@@ -216,11 +222,10 @@ public class ThriftStore {
         }
     } 
 
-    // TODO
     class Assistant implements Runnable {
         private static ConcurrentHashMap<String, Integer> assistant_inventory = new ConcurrentHashMap<>();
 
-        private long threadId = Thread.currentThread().getId();
+        private long threadID = Thread.currentThread().getId();
 
         // initialize the assistant -- inventory is 0
         public Assistant() {
@@ -238,15 +243,16 @@ public class ThriftStore {
                 box.enter();
 
                 // assistant grabs 10 random items from box
-                for (int items = 0; items < 10; items++) {
+                for (int items = 0; items < MAX_ITEMS_ASSISTANT_CARRY; items++) {
                     String randomSection = SECTION_NAMES[random.nextInt(SECTION_NUM)];
-                    Section section = section.findSection(randomSection);
+                    Section section = findSection(randomSection);
+
+                    int temp = assistant_inventory.get(randomSection); // previous inventory value
+
                     if (section.num_items > 0) {
                         box.removeItems(randomSection, 1);
-                        // don't know if this is right, but add the items to the assistant's inventory
-                        assistant_inventory.put(section, 1);
+                        assistant_inventory.put(randomSection, temp + 1); // increment
                     } else {
-                        // there are no items in that section, try again
                         items--;
                     }
                 }
@@ -254,29 +260,34 @@ public class ThriftStore {
                 // assistant exits box
                 box.exit();
 
-                // assistant enters first section
-                for (String sectionName : SECTION_NAMES) {
-                    Section section = store.getSection(sectionName);
+                // assistant walks over to sections
+                Thread.sleep(10 * TICK_DURATION_MILLISECONDS + MAX_ITEMS_ASSISTANT_CARRY * TICK_DURATION_MILLISECONDS);
 
-                    // assistant enters section
-                    section.enterSect();
+                for (Entry<String, Integer> entry : assistant_inventory.entrySet()){
+                    String inv_section_name = entry.getKey();
+                    int inv_num_items = entry.getValue();
 
-                    // assistant stocks items from inventory
-                    int stockedItems = assistant_inventory.getOrDefault(sectionName, 0);
-                    section.num_items += stockedItems;
-                    assistant_inventory.put(sectionName, 0); // clear the assistant's inventory for this section
+                    if (inv_num_items > 0) {
 
-                    // assistant exits section
-                    section.exitSect();
-                } 
+                        Section stock_sect = store.getSection(inv_section_name);
+                    
+                        // assistant enters section
+                        stock_sect.enterSect();
 
-                // repeat until assistant is empty handed
+                        stock_sect.num_items += inv_num_items;
+
+                        assistant_inventory.put(inv_section_name, 0); // clear the assistant's inventory for this section
+
+                        stock_sect.exitSect();
+
+                    }
+                }
             }
         }
     }
 
     class Delivery implements Runnable {
-        private long threadId = Thread.currentThread().getId();
+        private long getId = Thread.currentThread().getId();
 
         public void run() {
             while (true) {
@@ -285,7 +296,7 @@ public class ThriftStore {
                         delivery();
 
                         System.out.print("<" + ticks + ">" + "<" + Thread.currentThread().getId() + ">" + "Deposit_of_items : ");
-                        for (Entry<String, Integer> item : box.items){
+                        for (Entry<String, Integer> item : box.items.entrySet()){
                             String section = entry.getKey();
                             int num_items = entry.getValue();
                             if (num_items > 0){
