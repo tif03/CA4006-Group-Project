@@ -127,6 +127,25 @@ public class ThriftStore {
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    //method to make delivery -- it only populates the box
+    public void delivery(){
+        int remain = MAX_ITEMS_PER_DELIVERY;    // remaining space out of 10
+        int section_index = 0;
+        while (remain >= 0 && section_index <= SECTION_NUM){
+            int items = random.nextInt(remain + 1); // generate random number 0 to remaining space
+            String section = SECTION_NAMES[section_index];
+            box.addItem(section, items); // putting items into the box
+            remain -= items;
+
+            section_index += 1;
+        }
+
+        // put remaining items into a random section
+        if (remain > 0){
+            String section = SECTION_NAMES[random.nextInt(SECTION_NUM)];
+            box.addItem(section, items); // putting items into the box
+        }
+    }
 
     // TODO figure out if this actually works
     // in charge of ONLY incrementing ticks, runs in background
@@ -166,7 +185,7 @@ public class ThriftStore {
     class Customer implements Runnable {
         private final int id;
 
-        public long threadId = Thread.currentThread().getId();
+        public long threadId = Thread.currentThread().threadId();
 
         public Customer(int id) {
             this.id = id;
@@ -200,7 +219,7 @@ public class ThriftStore {
     class Assistant implements Runnable {
         private static ConcurrentHashMap<String, Integer> assistant_inventory = new ConcurrentHashMap<>();
 
-        public long threadId = Thread.currentThread().getId();
+        private long threadId = Thread.currentThread().getId();
 
         // initialize the assistant -- inventory is 0
         public Assistant() {
@@ -208,46 +227,11 @@ public class ThriftStore {
                 assistant_inventory.put(section, 0);
             }
         }
-
-        //method to make delivery -- it only populates the box
-        private static void delivery(){
-            int remain = MAX_ITEMS_PER_DELIVERY;    // remaining space out of 10
-            int section_index = 0;
-            while (remain >= 0 && section_index <= SECTION_NUM){
-                int items = random.nextInt(remain + 1); // generate random number 0 to remaining space
-                String section = SECTION_NAMES[section_index];
-                box.addItem(section, items); // putting items into the box
-                remain -= items;
-
-                section_index += 1;
-            }
-
-            // put remaining items into a random section
-            if (remain > 0){
-                String section = SECTION_NAMES[random.nextInt(SECTION_NUM)];
-                box.addItem(section, items); // putting items into the box
-            }
-        }
         
 
         @Override
         public void run() {
             while (true) {
-                // if about 100 ticks pass call delivery function to make a delivery
-                // Check if it's time for a delivery event
-                if (random.nextDouble() < 1.0 / AVERAGE_DELIVERY_INTERVAL) {
-                    delivery(); // delivery event is just to populate the box
-                    
-                    System.out.print("<" + ticks + ">" + "<" + this.threadID + ">" + "Deposit_of_items : ");
-                    for (Entry<String, Integer> item : box.items){
-                        String section = entry.getKey();
-                        int num_items = entry.getValue();
-                        if (num_items > 0){
-                            System.out.print(section + " = " + num_items + ", "); 
-                        }
-                    }
-                    System.out.println();
-                }
 
                 // assistant enters box
                 // assistant grabs items from box
@@ -262,10 +246,45 @@ public class ThriftStore {
         }
     }
 
+    class Delivery implements Runnable {
+        private long threadId = Thread.currentThread().threadId();
+
+        public void run() {
+            while (true) {
+                if (random.nextDouble() < 1.0 / AVERAGE_DELIVERY_INTERVAL) {
+                    try {
+                        delivery();
+
+                        System.out.print("<" + ticks + ">" + "<" + Thread.currentThread().threadId() + ">" + "Deposit_of_items : ");
+                        for (Entry<String, Integer> item : box.items){
+                            String section = entry.getKey();
+                            int num_items = entry.getValue();
+                            if (num_items > 0){
+                                System.out.print(section + " = " + num_items + ", "); 
+                            }
+                        }
+                        System.out.println();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+
 
     // Main class with the main method
     public class Main {
         public static void main(String[] args) {
+
+            // Main Delivery thread
+            Thread deliveryThread = new Thread(new Delivery());
+            deliveryThread.start();
+
+            // initalize assistant thread
+            Thread assistant = new Thread(new Assistant());
+            assistant.start();
+
             // initialize customer threads
             for (int i = 1; i < NUM_CUSTOMERS + 1; i++) {
                 Thread customer = new Thread(new Customer());
@@ -273,10 +292,6 @@ public class ThriftStore {
 
                 customer.start();
             }
-
-            // initalize assistant thread
-            Thread assistant = new Thread(new Assistant());
-            assistant.start();
 
             ThriftStore thriftStore = new ThriftStore();
 
