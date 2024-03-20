@@ -235,12 +235,40 @@ public class ThriftStore {
             while (true) {
 
                 // assistant enters box
-                // assistant grabs items from box
+                box.enter();
+
+                // assistant grabs 10 random items from box
+                for (int items = 0; items < 10; items++) {
+                    String randomSection = SECTION_NAMES[random.nextInt(SECTION_NUM)];
+                    Section section = section.findSection(randomSection);
+                    if (section.num_items > 0) {
+                        box.removeItems(randomSection, 1);
+                        // don't know if this is right, but add the items to the assistant's inventory
+                        assistant_inventory.put(section, 1);
+                    } else {
+                        // there are no items in that section, try again
+                        items--;
+                    }
+                }
+
                 // assistant exits box
+                box.exit();
 
                 // assistant enters first section
-                // assistant stocks
-                // assistant exits first section
+                for (String sectionName : SECTION_NAMES) {
+                    Section section = store.getSection(sectionName);
+
+                    // assistant enters section
+                    section.enterSect();
+
+                    // assistant stocks items from inventory
+                    int stockedItems = assistant_inventory.getOrDefault(sectionName, 0);
+                    section.num_items += stockedItems;
+                    assistant_inventory.put(sectionName, 0); // clear the assistant's inventory for this section
+
+                    // assistant exits section
+                    section.exitSect();
+                } 
 
                 // repeat until assistant is empty handed
             }
@@ -248,7 +276,7 @@ public class ThriftStore {
     }
 
     class Delivery implements Runnable {
-        private long threadId = Thread.currentThread().threadId();
+        private long threadId = Thread.currentThread().getId();
 
         public void run() {
             while (true) {
@@ -256,7 +284,7 @@ public class ThriftStore {
                     try {
                         delivery();
 
-                        System.out.print("<" + ticks + ">" + "<" + Thread.currentThread().threadId() + ">" + "Deposit_of_items : ");
+                        System.out.print("<" + ticks + ">" + "<" + Thread.currentThread().getId() + ">" + "Deposit_of_items : ");
                         for (Entry<String, Integer> item : box.items){
                             String section = entry.getKey();
                             int num_items = entry.getValue();
