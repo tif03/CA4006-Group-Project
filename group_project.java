@@ -2,11 +2,12 @@ import java.util.concurrent.*;
 import java.util.Random;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicInteger;
 
 // TODO figure out all the print statements
 
 public class ThriftStore {
-    private static int ticks = 1; // clock
+    AtomicInteger ticks = new AtomicInteger(0); // set clock to 0
 
     private static final String[] SECTION_NAMES = {"Electronics", "Clothing", "Furniture", "Toys", "Sporting Goods", "Books"};
     private static final int SECTION_NUM = 6;
@@ -153,21 +154,15 @@ public class ThriftStore {
     // TODO figure out if this actually works
     // in charge of ONLY incrementing ticks, runs in background
     public void simulate() {
-        while (ticks <= TOTAL_TICKS_PER_DAY) { // terminate after a day
+        while (ticks.get() <= TOTAL_TICKS_PER_DAY) { // terminate after a day
+            // current tick
+            ticks.incrementAndGet();
 
             // always signal assistant to stock items
             // stocking event if box is full
 
             // code to trigger a customer thread
 
-            // Simulate the passing of time
-            try {
-                Thread.sleep(TICK_DURATION_MILLISECONDS); // Sleep for the tick duration
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            ticks++; // Increment the tick count
         }
 
     }
@@ -204,7 +199,6 @@ public class ThriftStore {
                 Section section = findSection(sectionVisit);
 
                 // customer enters a section
-                int start_time = ticks;
                 section.enterSect();
 
                 // purchase is triggered -- if empty it does nothing, if has items it makes purchase
@@ -212,7 +206,6 @@ public class ThriftStore {
                 if (section.num_items > 0) {
                     Thread.sleep(TICK_DURATION_MILLISECONDS); // customer takes 1 tick to grab item
                     section.num_items--;
-                    int finish_time = ticks;
                     System.out.println("<" + ticks + ">" + "<" + Thread.currentThread().getId() + "> Customer = " + this.id  + " Collected_from_section : " + sectionVisit + "Waited_ticks : " + (finish_time - start_time));
                 }
                 
@@ -279,6 +272,8 @@ public class ThriftStore {
                         assistant_inventory.put(inv_section_name, 0); // clear the assistant's inventory for this section
 
                         stock_sect.exitSect();
+
+                        Thread.sleep(10 * TICK_DURATION_MILLISECONDS + )
 
                     }
                 }
