@@ -4,8 +4,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
-// TODO figure out all the print statements
-
 public class ThriftStore {
     AtomicInteger ticks = new AtomicInteger(0); // set clock to 0
 
@@ -29,7 +27,7 @@ public class ThriftStore {
     
     // Define global variables to keep track of sections and items
     private static Box box = new Box(SECTION_NAMES);
-    private static Store store = new Store(new ArrayList<>());
+    private static Store store = new Store(new ArrayList<Section>());
     
     // class defining features and methods of the box
     public class Box {
