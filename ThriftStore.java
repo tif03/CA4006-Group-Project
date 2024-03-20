@@ -1,8 +1,10 @@
 import java.util.concurrent.*;
 import java.util.Random;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
+
 
 public class ThriftStore {
     AtomicInteger ticks = new AtomicInteger(0); // set clock to 0
@@ -26,8 +28,8 @@ public class ThriftStore {
 
     
     // Define global variables to keep track of sections and items
-    private static Box box = new Box(SECTION_NAMES);
-    private static Store store = new Store(new ArrayList<Section>());
+    private static Box box;
+    private static Store store;
     
     // class defining features and methods of the box
     public class Box {
@@ -108,7 +110,7 @@ public class ThriftStore {
 
     // class defining thrift store
     public class Store {
-        private List<Section> sections = new ArrayList<Section>(); // list of sections
+        private List<Section> sections = new ArrayList<>(); // list of sections
 
         Store(){
             for (String section : SECTION_NAMES){
@@ -119,10 +121,12 @@ public class ThriftStore {
 
         public Section getSection(String sect_name){
             for (Section sect : this.sections){
-                if (sect.getSectionName.equals(sect_name)){
+                if (sect.section_name.equals(sect_name)){
                     return sect;
                 }
             }
+            //TODO we have to change this o.o
+            return new Section("kill me", 0); 
         }
     }
 
@@ -145,7 +149,7 @@ public class ThriftStore {
         // put remaining items into a random section
         if (remain > 0){
             String section = SECTION_NAMES[random.nextInt(SECTION_NUM)];
-            box.addItem(section, items); // putting items into the box
+            box.addItem(section, remain); // putting items into the box
         }
     }
 
@@ -166,11 +170,14 @@ public class ThriftStore {
     }
 
     public Section findSection(String sect_name){
-        for (Section section : store){
-            if (section.getSectionName.equals(sect_name)){
+        for (Section section : store.sections){
+            if (section.section_name.equals(sect_name)){
                 return section;
             }
         }
+
+        //TODO we have to change this o.o
+        return new Section("kill me", 0); 
     }
 
 
@@ -214,7 +221,7 @@ public class ThriftStore {
     } 
 
     class Assistant implements Runnable {
-        private static ConcurrentHashMap<String, Integer> assistant_inventory = new ConcurrentHashMap<>();
+        private ConcurrentHashMap<String, Integer> assistant_inventory = new ConcurrentHashMap<>();
 
         private long threadID = Thread.currentThread().getId();
 
@@ -252,7 +259,12 @@ public class ThriftStore {
                 box.exit();
 
                 // assistant walks over to sections from box
-                Thread.sleep(10 * TICK_DURATION_MILLISECONDS + MAX_ITEMS_ASSISTANT_CARRY * TICK_DURATION_MILLISECONDS);
+                try {
+                    Thread.sleep(10 * TICK_DURATION_MILLISECONDS + MAX_ITEMS_ASSISTANT_CARRY * TICK_DURATION_MILLISECONDS);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
 
                 int remain = MAX_ITEMS_ASSISTANT_CARRY; 
                 for (Entry<String, Integer> entry : assistant_inventory.entrySet()){
@@ -275,7 +287,12 @@ public class ThriftStore {
                         stock_sect.exitSect();
 
                         // assistant moves from section to section 
-                        Thread.sleep(10 * TICK_DURATION_MILLISECONDS + remain * TICK_DURATION_MILLISECONDS);
+                        try {
+                            Thread.sleep(10 * TICK_DURATION_MILLISECONDS + remain * TICK_DURATION_MILLISECONDS);
+                        } catch (InterruptedException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
 
                     }
                 }
@@ -294,47 +311,44 @@ public class ThriftStore {
 
                         System.out.print("<" + ticks + ">" + "<" + Thread.currentThread().getId() + ">" + "Deposit_of_items : ");
                         for (Entry<String, Integer> item : box.items.entrySet()){
-                            String section = entry.getKey();
-                            int num_items = entry.getValue();
+                            String section = item.getKey();
+                            int num_items = item.getValue();
                             if (num_items > 0){
                                 System.out.print(section + " = " + num_items + ", "); 
                             }
                         }
                         System.out.println();
-                    } catch (InterruptedException e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
             }
         }
     }
-
-
-    // Main class with the main method
-    public class Main {
-        public static void main(String[] args) {
-
-            // Main Delivery thread
-            Thread deliveryThread = new Thread(new Delivery());
-            deliveryThread.start();
-
-            // initalize assistant thread
-            Thread assistant = new Thread(new Assistant());
-            assistant.start();
-
-            // initialize customer threads
-            for (int i = 1; i < NUM_CUSTOMERS + 1; i++) {
-                Thread customer = new Thread(new Customer());
-                customer.id = i;
-
-                customer.start();
-            }
-
-            ThriftStore thriftStore = new ThriftStore();
-
-            // Start the simulation + clock
-            thriftStore.simulate(); 
-        }
-    }
-
+ 
 }
+   
+    public void main(String[] args) {
+
+        ThriftStore thriftStore = new ThriftStore();
+        box = new Box(SECTION_NAMES);
+        store = new Store();
+
+        // Main Delivery thread
+        Thread deliveryThread = new Thread(new Delivery());
+        deliveryThread.start();
+
+        // initalize assistant thread
+        Thread assistant = new Thread(new Assistant());
+        assistant.start();
+
+        // initialize customer threads
+        for (int i = 1; i < NUM_CUSTOMERS + 1; i++) {
+            Thread customer = new Thread(new Customer(i));
+
+            customer.start();
+        }
+
+        // Start the simulation + clock
+        thriftStore.simulate(); 
+    }
