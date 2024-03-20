@@ -128,46 +128,10 @@ public class ThriftStore {
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-    //method to make delivery -- it only populates the box
-    private static void delivery(){
-        int remain = MAX_ITEMS_PER_DELIVERY;    // remaining space out of 10
-        int section_index = 0;
-        while (remain >= 0 && section_index <= SECTION_NUM){
-            int items = random.nextInt(remain + 1); // generate random number 0 to remaining space
-            String section = SECTION_NAMES[section_index];
-            box.addItem(section, items); // putting items into the box
-            remain -= items;
-
-            section_index += 1;
-        }
-
-        // put remaining items into a random section
-        if (remain > 0){
-            String section = SECTION_NAMES[random.nextInt(SECTION_NAMES.size())];
-            box.addItem(section, items); // putting items into the box
-        }
-
-        // TODO figure out Thread ID
-        System.out.print("<" + ticks + ">" + "<Thread_Id>" + "Deposit_of_items : ");
-        for (Entry<String, Integer> item : box.items){
-            String section = entry.getKey();
-            int num_items = entry.getValue();
-            if (num_items > 0){
-                System.out.print(section + " = " + num_items + ", "); 
-            }
-        }
-        System.out.println();
-    }
-
     // TODO figure out if this actually works
-    // in charge of incrementing ticks
+    // in charge of ONLY incrementing ticks, runs in background
     public void simulate() {
         while (ticks <= TOTAL_TICKS_PER_DAY) { // terminate after a day
-    
-            // Check if it's time for a delivery event
-            if (random.nextDouble() < 1.0 / AVERAGE_DELIVERY_INTERVAL) {
-                delivery(); // delivery event is just to populate the box
-            }
 
             // always signal assistant to stock items
             // stocking event if box is full
@@ -245,9 +209,46 @@ public class ThriftStore {
             }
         }
 
+        //method to make delivery -- it only populates the box
+        private static void delivery(){
+            int remain = MAX_ITEMS_PER_DELIVERY;    // remaining space out of 10
+            int section_index = 0;
+            while (remain >= 0 && section_index <= SECTION_NUM){
+                int items = random.nextInt(remain + 1); // generate random number 0 to remaining space
+                String section = SECTION_NAMES[section_index];
+                box.addItem(section, items); // putting items into the box
+                remain -= items;
+
+                section_index += 1;
+            }
+
+            // put remaining items into a random section
+            if (remain > 0){
+                String section = SECTION_NAMES[random.nextInt(SECTION_NUM)];
+                box.addItem(section, items); // putting items into the box
+            }
+        }
+        
+
         @Override
         public void run() {
             while (true) {
+                // if about 100 ticks pass call delivery function to make a delivery
+                // Check if it's time for a delivery event
+                if (random.nextDouble() < 1.0 / AVERAGE_DELIVERY_INTERVAL) {
+                    delivery(); // delivery event is just to populate the box
+                    
+                    System.out.print("<" + ticks + ">" + "<" + this.threadID + ">" + "Deposit_of_items : ");
+                    for (Entry<String, Integer> item : box.items){
+                        String section = entry.getKey();
+                        int num_items = entry.getValue();
+                        if (num_items > 0){
+                            System.out.print(section + " = " + num_items + ", "); 
+                        }
+                    }
+                    System.out.println();
+                }
+
                 // assistant enters box
                 // assistant grabs items from box
                 // assistant exits box
@@ -279,8 +280,8 @@ public class ThriftStore {
 
             ThriftStore thriftStore = new ThriftStore();
 
-            // Start the simulation
-            thriftStore.simulate();
+            // Start the simulation + clock
+            thriftStore.simulate(); 
         }
     }
 
