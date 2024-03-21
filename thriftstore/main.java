@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 // TODO -- figure out how variables translate to respective class
 
+@SuppressWarnings("deprecation")
 public class Main {
     public static AtomicInteger ticks;
 
@@ -210,15 +211,13 @@ public class Main {
 
 
     static class Delivery implements Runnable {
-    private long getId = Thread.currentThread().getId();
-
-    public void run() {
-        while (true) {
-            try {
+        public void run() {
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
                     Thread.sleep(TICK_DURATION_MILLISECONDS * 100);
                     delivery();
-
-                    System.out.print("<" + ticks + ">" + "<" + Thread.currentThread().getId() + ">" + "Deposit_of_items : ");
+    
+                    System.out.print("<" + ticks + ">" + "<" + Thread.currentThread().getName() + ">" + " Deposit_of_items : ");
                     for (Entry<String, Integer> item : box.items.entrySet()){
                         String section = item.getKey();
                         int num_items = item.getValue();
@@ -227,12 +226,15 @@ public class Main {
                         }
                     }
                     System.out.println();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt(); // Restore interrupted status
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         }
     }
+    
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
