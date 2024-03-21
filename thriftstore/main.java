@@ -58,7 +58,6 @@ public class Main {
     // TODO figure out if this actually works
     // in charge of ONLY incrementing ticks, runs in background
     public static void simulate() {
-        // comment 
         while (ticks.get() < TOTAL_TICKS_PER_DAY) { // terminate after a day
             try {
                 Thread.sleep(TICK_DURATION_MILLISECONDS);
@@ -66,9 +65,8 @@ public class Main {
                 e.printStackTrace();
             }
 
-            ticks.getAndIncrement();
+            ticks.incrementAndGet();
             
-
         }
     }
 
