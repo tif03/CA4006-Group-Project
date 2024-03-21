@@ -64,6 +64,9 @@ public class Main {
 
             // code to trigger a customer thread
         }
+
+        System.out.println("done");
+
     }
 
     public static Section findSection(String sect_name){
@@ -237,6 +240,8 @@ public static void main(String[] args) {
     box = new Box(SECTION_NAMES);
     store = new Store();
 
+    List<Thread> customer_threads = new ArrayList<>();
+
     // Main Delivery thread
     Thread deliveryThread = new Thread(new Delivery());
     deliveryThread.start();
@@ -248,13 +253,18 @@ public static void main(String[] args) {
     // initialize customer threads
     for (int i = 1; i < NUM_CUSTOMERS + 1; i++) {
         Thread customer = new Thread(new Customer(i));
+        customer_threads.add(customer);
         customer.start();
     }
 
     // Start the simulation + clock
     simulate(); 
 
-    System.out.println("done");
+    deliveryThread.interrupt();
+    assistant.interrupt();
+    for (int i = 0; i < NUM_CUSTOMERS; i++) {
+        customer_threads.get(i).interrupt();
+    } 
 }
  
 }
