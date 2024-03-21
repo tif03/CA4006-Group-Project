@@ -16,6 +16,7 @@ public class Main {
     public static final int SECTION_NUM = 6;
 
     public static Boolean delivery_made = false;
+    public static Boolean has_items = false;
 
     public static final int TOTAL_TICKS_PER_DAY = 1000;    // 1000 ticks per day
     public static final long TICK_DURATION_MILLISECONDS = 100; // 100 Milliseconds per tick
@@ -36,15 +37,16 @@ public class Main {
 
     //method to make delivery -- it only populates the box
     public static synchronized void delivery() {
+        box.enter();
 
         for (int i = 1; i <= 10; i++) {
             String section = SECTION_NAMES[random.nextInt(SECTION_NAMES.length)];
             box.addItem(section, 1);
         }
 
-        delivery_made = true;
-
         System.out.println("<" + Main.ticks.get() + ">" + "<" + Thread.currentThread().getId()+ ">" + "Deposit_of_items : " + box.items);
+
+        box.exit();
     }
 
     // TODO figure out if this actually works
@@ -95,59 +97,75 @@ public class Main {
         }
     
     
-    @Override
-    public void run() {
-        while (true) {
-    
-            // assistant grabs 10 random items from box
-            if (delivery_made) {
-    
-                delivery_made = false; // once an assistant accounts for a delivery back to false until next one
-    
-                for (int items = 0; items < MAX_ITEMS_ASSISTANT_CARRY; items++) {
-                    String randomSection = SECTION_NAMES[random.nextInt(SECTION_NAMES.length)];
-    
-                    int temp = assistant_inventory.get(randomSection); // previous inventory value
-    
-                    if (box.items.get(randomSection) > 0) {
-                        box.removeItems(randomSection, 1);
-                        assistant_inventory.put(randomSection, temp + 1); // increment
-                    } else {
-                        items--;
-                    }
-                }
-            }
-    
-            // TODO ticks and stuff
+        @Override
+        public synchronized void run() {
+            System.out.println("Assistant Thread started");
+            while (true) {
         
-            // stocking shelves
-            for (Entry<String, Integer> entry : ((Hashtable<String, Integer>) assistant_inventory).entrySet()){
-                String inv_section_name = entry.getKey();
-                int inv_num_items = entry.getValue();
-    
-                // TODO enter section
-    
-                if (inv_num_items > 0) {
-    
-                    Section temp_section = findSection(inv_section_name);
-                    int temp = temp_section.num_items;
-    
-                    // assistant stocks the thrift store shelves with items in inventory
-                    for (Section section : store){
-                        if (section.section_name.equals(temp_section.section_name)){
-                            temp_section.addToSection(inv_num_items);
+                // assistant grabs 10 random items from box
+                if (delivery_made) {
+                    box.enter();
+                    has_items = true;
+
+                    System.out.println("Assistant picks up delivery");
+        
+                    for (int items = 0; items < MAX_ITEMS_ASSISTANT_CARRY; items++) {
+                        String randomSection = SECTION_NAMES[random.nextInt(SECTION_NAMES.length)];
+        
+                        int temp = assistant_inventory.get(randomSection); // previous inventory value
+        
+                        if (box.items.get(randomSection) > 0) {
+                            box.removeItems(randomSection, 1);
+                            assistant_inventory.put(randomSection, temp + 1); // increment
+                        } else {
+                            items--;
                         }
                     }
-    
-                    assistant_inventory.put(inv_section_name, 0); // clear the assistant's inventory for this section
-    
+
+                    delivery_made = false; // once an assistant accounts for a delivery back to false until next one
+                    box.exit();
                 }
-    
-                // TODO exit section
-                // TODO print
+        
+                // TODO ticks and stuff
+        
+                if (has_items) {
+                    System.out.println("Assistant begins stocking shelves");
+                    // stocking shelves
+                    for (Entry<String, Integer> entry : ((Hashtable<String, Integer>) assistant_inventory).entrySet()){
+                        String inv_section_name = entry.getKey();
+                        int inv_num_items = entry.getValue();
+
+                        // TODO enter section
+                        Section enter_section = findSection(inv_section_name);
+                        enter_section.enterSect();
+                        System.out.println("<" + ticks.get() +"> <" + Thread.currentThread().getId() + "> Assistant=1" + " began_stocking_section : " + inv_section_name);
+
+                        if (inv_num_items > 0) {
+
+                            Section temp_section = findSection(inv_section_name);
+                            int temp = temp_section.num_items;
+
+                            // assistant stocks the thrift store shelves with items in inventory
+                            for (Section section : store){
+                                if (section.section_name.equals(temp_section.section_name)){
+                                    temp_section.addToSection(inv_num_items);
+                                }
+                            }
+
+                            assistant_inventory.put(inv_section_name, 0); // clear the assistant's inventory for this section
+
+                        }
+
+                        // TODO exit section
+                        enter_section.exitSect();
+                        // TODO print
+                        System.out.println("<" + ticks.get() +"> <" + Thread.currentThread().getId() + "> Assistant=1" + " finished_stocking_section : " + inv_section_name);
+                    }
+                    has_items = false;
+                }
+                
             }
         }
-    }
     }
     
 
