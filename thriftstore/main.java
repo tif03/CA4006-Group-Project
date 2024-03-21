@@ -29,7 +29,7 @@ public class Main {
     public static Random random = new Random(123);
 
     // Define global variables to keep track of sections and items
-    public static Box box;
+    public static Box box = new Box(SECTION_NAMES);
     public static List<Section> store = new ArrayList<>();
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -44,12 +44,7 @@ public class Main {
 
         delivery_made = true;
 
-        System.out.print("<" + Main.ticks.get() + ">" + "<" + Thread.currentThread().getId()+ ">" + "Deposit_of_items : ");
-        for (String key : box.items.keySet()) {
-            int quantity = box.items.get(key);
-            System.out.print(key + " = " + quantity + " ");
-        } 
-        System.out.println();
+        System.out.println("<" + Main.ticks.get() + ">" + "<" + Thread.currentThread().getId()+ ">" + "Deposit_of_items : " + box.items);
     }
 
     // TODO figure out if this actually works
@@ -63,6 +58,7 @@ public class Main {
             }
 
             ticks.incrementAndGet();
+
             System.out.println(ticks.get());
             if (ticks.get() % 100 == 0) {
                 delivery();
@@ -185,34 +181,6 @@ public class Main {
             }
         }
     } 
-
-    static class Delivery implements Runnable {
-        public void run() {
-            while (!Thread.currentThread().isInterrupted()) {
-                // try {
-                    // Thread.sleep(TICK_DURATION_MILLISECONDS * 100);
-                    
-                    box.enter();
-
-                    delivery();
-    
-                    System.out.print("<" + ticks + ">" + "<" + Thread.currentThread().getName() + ">" + " Deposit_of_items : ");
-                    for (Entry<String, Integer> item : box.items.entrySet()){
-                        String section = item.getKey();
-                        int num_items = item.getValue();
-                        if (num_items > 0){
-                            System.out.print(section + " = " + num_items + " "); 
-                        }
-                    }
-
-                    System.out.println();
-                    box.exit();
-                // } catch (InterruptedException e) {
-                //     e.printStackTrace();
-                // }
-            }
-        }
-    }
     
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -221,8 +189,6 @@ public class Main {
     public static void main(String[] args) {
 
         ticks = new AtomicInteger(0); // set clock to 0
-
-        box = new Box(SECTION_NAMES);
 
         // init store
 
