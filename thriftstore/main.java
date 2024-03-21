@@ -7,7 +7,8 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
 // TODO -- figure out how variables translate to respective class
-public class main {
+
+public class Main {
     AtomicInteger ticks = new AtomicInteger(0); // set clock to 0
 
     public static final String[] SECTION_NAMES = {"Electronics", "Clothing", "Furniture", "Toys", "Sporting Goods", "Books"};
@@ -78,32 +79,177 @@ public class main {
         return new Section("kill me", 0); 
     }
 
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    class Assistant implements Runnable {
+    
+        private ConcurrentHashMap<String, Integer> assistant_inventory = new ConcurrentHashMap<>();
+    
+        private long threadID = Thread.currentThread().getId();
+    
+        // initialize the assistant -- inventory is 0
+        public Assistant() {
+            for (String section : SECTION_NAMES) {
+                assistant_inventory.put(section, 0);
+            }
+        }
+        
+    
+        @Override
+        public void run() {
+            while (true) {
+    
+                // assistant enters box
+                box.enter();
+    
+                // assistant grabs 10 random items from box
+                for (int items = 0; items < MAX_ITEMS_ASSISTANT_CARRY; items++) {
+                    String randomSection = SECTION_NAMES[random.nextInt(SECTION_NUM)];
+                    Section section = findSection(randomSection);
+    
+                    int temp = assistant_inventory.get(randomSection); // previous inventory value
+    
+                    if (section.num_items > 0) {
+                        box.removeItems(randomSection, 1);
+                        assistant_inventory.put(randomSection, temp + 1); // increment
+                    } else {
+                        items--;
+                    }
+                }
+    
+                // assistant exits box
+                box.exit();
+    
+                // assistant walks over to sections from box
+                try {
+                    Thread.sleep(10 * TICK_DURATION_MILLISECONDS + MAX_ITEMS_ASSISTANT_CARRY * TICK_DURATION_MILLISECONDS);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+    
+                int remain = MAX_ITEMS_ASSISTANT_CARRY; 
+                for (Entry<String, Integer> entry : assistant_inventory.entrySet()){
+                    String inv_section_name = entry.getKey();
+                    int inv_num_items = entry.getValue();
+    
+                    if (inv_num_items > 0) {
+    
+                        Section stock_sect = store.getSection(inv_section_name);
+                    
+                        // assistant enters section
+                        stock_sect.enterSect();
+    
+                        stock_sect.num_items += inv_num_items;
+    
+                        remain -= inv_num_items;
+    
+                        assistant_inventory.put(inv_section_name, 0); // clear the assistant's inventory for this section
+    
+                        stock_sect.exitSect();
+    
+                        // assistant moves from section to section 
+                        try {
+                            Thread.sleep(10 * TICK_DURATION_MILLISECONDS + remain * TICK_DURATION_MILLISECONDS);
+                        } catch (InterruptedException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+    
+                    }
+                }
+            }
+        }
+    }
+
+    class Customer implements Runnable {
+        private final int id;
+    
+        public long getId = Thread.currentThread().getId();
+    
+        public Customer(int id) {
+            this.id = id;
+        }
+    
+        @Override
+        public void run() {
+            while (true) {
+                // choose random section to visit
+                String sectionVisit = SECTION_NAMES[random.nextInt(SECTION_NAMES.length)];
+    
+                // find the section object corresponding to the chosen section name
+                Section section = findSection(sectionVisit);
+    
+                // customer enters a section
+                section.enterSect();
+    
+                // purchase is triggered -- if empty it does nothing, if has items it makes purchase
+                // decrement num items in section
+                if (section.num_items > 0) {
+                    Thread.sleep(TICK_DURATION_MILLISECONDS); // customer takes 1 tick to grab item
+                    section.num_items--;
+                    System.out.println("<" + ticks + ">" + "<" + Thread.currentThread().getId() + "> Customer = " + this.id  + " Collected_from_section : " + sectionVisit + "Waited_ticks : " + (finish_time - start_time));
+                }
+                
+                // customer exits
+                section.exitSect();
+            }
+        }
+    } 
+
+
+    class Delivery implements Runnable {
+    private long getId = Thread.currentThread().getId();
+
+    public void run() {
+        while (true) {
+            if (random.nextDouble() < 1.0 / AVERAGE_DELIVERY_INTERVAL) {
+                try {
+                    delivery();
+
+                    System.out.print("<" + ticks + ">" + "<" + Thread.currentThread().getId() + ">" + "Deposit_of_items : ");
+                    for (Entry<String, Integer> item : box.items.entrySet()){
+                        String section = item.getKey();
+                        int num_items = item.getValue();
+                        if (num_items > 0){
+                            System.out.print(section + " = " + num_items + ", "); 
+                        }
+                    }
+                    System.out.println();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+}
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    public void main(String[] args) {
 
-        ThriftStore thriftStore = new ThriftStore();
-        box = new Box(SECTION_NAMES);
-        store = new Store();
+public void main(String[] args) {
 
-        // Main Delivery thread
-        Thread deliveryThread = new Thread(new Delivery());
-        deliveryThread.start();
+    ThriftStore thriftStore = new ThriftStore();
+    box = new Box(SECTION_NAMES);
+    store = new Store();
 
-        // initalize assistant thread
-        Thread assistant = new Thread(new Assistant());
-        assistant.start();
+    // Main Delivery thread
+    Thread deliveryThread = new Thread(new Delivery());
+    deliveryThread.start();
 
-        // initialize customer threads
-        for (int i = 1; i < NUM_CUSTOMERS + 1; i++) {
-            Thread customer = new Thread(new Customer(i));
+    // initalize assistant thread
+    Thread assistant = new Thread(new Assistant());
+    assistant.start();
 
-            customer.start();
-        }
+    // initialize customer threads
+    for (int i = 1; i < NUM_CUSTOMERS + 1; i++) {
+        Thread customer = new Thread(new Customer(i));
 
-        // Start the simulation + clock
-        thriftStore.simulate(); 
+        customer.start();
     }
+
+    // Start the simulation + clock
+    thriftStore.simulate(); 
+}
  
 }
