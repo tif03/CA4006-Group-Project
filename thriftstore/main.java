@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 // TODO -- figure out how variables translate to respective class
 
 public class Main {
-    public static AtomicInteger ticks = new AtomicInteger(0); // set clock to 0
+    public static AtomicInteger ticks;
 
     public static final String[] SECTION_NAMES = {"Electronics", "Clothing", "Furniture", "Toys", "Sporting Goods", "Books"};
     public static final int SECTION_NUM = 6;
@@ -33,7 +33,7 @@ public class Main {
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //method to make delivery -- it only populates the box
-    public static void delivery(){
+    public static synchronized void delivery(){
         int remain = MAX_ITEMS_PER_DELIVERY;    // remaining space out of 10
         int section_index = 0;
         while (remain >= 0 && section_index < SECTION_NUM){
@@ -54,22 +54,17 @@ public class Main {
 
     // TODO figure out if this actually works
     // in charge of ONLY incrementing ticks, runs in background
-    public static void simulate() {
+    public static synchronized void simulate() {
+        ticks = new AtomicInteger(0); // set clock to 0
         while (ticks.get() < TOTAL_TICKS_PER_DAY) { // terminate after a day
             // current tick
             ticks.incrementAndGet();
 
-            // always signal assistant to stock items
-            // stocking event if box is full
-
-            // code to trigger a customer thread
         }
-
-        System.out.println("done");
 
     }
 
-    public static Section findSection(String sect_name){
+    public static synchronized Section findSection(String sect_name){
         for (Section section : store.sections){
             if (section.section_name.equals(sect_name)){
                 return section;
@@ -85,7 +80,7 @@ public class Main {
     
         private ConcurrentHashMap<String, Integer> assistant_inventory = new ConcurrentHashMap<>();
     
-        private long threadID = Thread.currentThread().threadId();
+        private long getId = Thread.currentThread().getId();
     
         // initialize the assistant -- inventory is 0
         public Assistant() {
@@ -165,7 +160,7 @@ public class Main {
     static class Customer implements Runnable {
         private final int id;
     
-        public long getId = Thread.currentThread().threadId();
+        public long getId = Thread.currentThread().getId();
     
         public Customer(int id) {
             this.id = id;
@@ -196,7 +191,7 @@ public class Main {
 
                     section.num_items--;
                     int finish_time = ticks.get();
-                    System.out.println("<" + ticks + ">" + "<" + Thread.currentThread().threadId() + "> Customer = " + this.id  + " Collected_from_section : " + sectionVisit + "Waited_ticks : " + (finish_time - start_time));
+                    System.out.println("<" + ticks + ">" + "<" + Thread.currentThread().getId() + "> Customer = " + this.id  + " Collected_from_section : " + sectionVisit + "Waited_ticks : " + (finish_time - start_time));
                 }
                 
                 // customer exits
@@ -207,7 +202,7 @@ public class Main {
 
 
     static class Delivery implements Runnable {
-    private long getId = Thread.currentThread().threadId();
+    private long getId = Thread.currentThread().getId();
 
     public void run() {
         while (true) {
@@ -215,7 +210,7 @@ public class Main {
                     Thread.sleep(TICK_DURATION_MILLISECONDS * 100);
                     delivery();
 
-                    System.out.print("<" + ticks + ">" + "<" + Thread.currentThread().threadId() + ">" + "Deposit_of_items : ");
+                    System.out.print("<" + ticks + ">" + "<" + Thread.currentThread().getId() + ">" + "Deposit_of_items : ");
                     for (Entry<String, Integer> item : box.items.entrySet()){
                         String section = item.getKey();
                         int num_items = item.getValue();
