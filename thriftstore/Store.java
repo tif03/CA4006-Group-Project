@@ -1,10 +1,12 @@
+package thriftstore;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class Store {
     public static final String[] SECTION_NAMES = {"Electronics", "Clothing", "Furniture", "Toys", "Sporting Goods", "Books"};
 
-    private List<Section> sections = new ArrayList<>(); // list of sections
+    public List<Section> sections = new ArrayList<>(); // list of sections
 
     Store(){
         for (String section : SECTION_NAMES){

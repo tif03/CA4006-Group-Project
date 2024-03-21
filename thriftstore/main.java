@@ -9,13 +9,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 // TODO -- figure out how variables translate to respective class
 
 public class Main {
-    AtomicInteger ticks = new AtomicInteger(0); // set clock to 0
+    public static AtomicInteger ticks = new AtomicInteger(0); // set clock to 0
 
     public static final String[] SECTION_NAMES = {"Electronics", "Clothing", "Furniture", "Toys", "Sporting Goods", "Books"};
     public static final int SECTION_NUM = 6;
 
     public static final int TOTAL_TICKS_PER_DAY = 1000;    // 1000 ticks per day
-    public static final int TICK_DURATION_MILLISECONDS = 100; // 100 Milliseconds per tick
+    public static final long TICK_DURATION_MILLISECONDS = 100; // 100 Milliseconds per tick
     public static final int AVERAGE_DELIVERY_INTERVAL = 100;
     public static final int AVERAGE_PURCHASE_INTERVAL = 10;
     public static final int MAX_ITEMS_PER_DELIVERY = 10;
@@ -23,7 +23,7 @@ public class Main {
 
     public static final int NUM_CUSTOMERS = 6;
 
-    public Random random = new Random();
+    public static Random random = new Random();
 
     // Define global variables to keep track of sections and items
     public static Box box;
@@ -33,10 +33,10 @@ public class Main {
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //method to make delivery -- it only populates the box
-    public void delivery(){
+    public static void delivery(){
         int remain = MAX_ITEMS_PER_DELIVERY;    // remaining space out of 10
         int section_index = 0;
-        while (remain >= 0 && section_index <= SECTION_NUM){
+        while (remain >= 0 && section_index < SECTION_NUM){
             int items = random.nextInt(remain + 1); // generate random number 0 to remaining space
             String section = SECTION_NAMES[section_index];
             box.addItem(section, items); // putting items into the box
@@ -54,7 +54,7 @@ public class Main {
 
     // TODO figure out if this actually works
     // in charge of ONLY incrementing ticks, runs in background
-    public void simulate() {
+    public static void simulate() {
         while (ticks.get() <= TOTAL_TICKS_PER_DAY) { // terminate after a day
             // current tick
             ticks.incrementAndGet();
@@ -68,7 +68,7 @@ public class Main {
 
     }
 
-    public Section findSection(String sect_name){
+    public static Section findSection(String sect_name){
         for (Section section : store.sections){
             if (section.section_name.equals(sect_name)){
                 return section;
@@ -81,7 +81,7 @@ public class Main {
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    class Assistant implements Runnable {
+    static class Assistant implements Runnable {
     
         private ConcurrentHashMap<String, Integer> assistant_inventory = new ConcurrentHashMap<>();
     
@@ -162,7 +162,7 @@ public class Main {
         }
     }
 
-    class Customer implements Runnable {
+    static class Customer implements Runnable {
         private final int id;
     
         public long getId = Thread.currentThread().getId();
@@ -179,6 +179,8 @@ public class Main {
     
                 // find the section object corresponding to the chosen section name
                 Section section = findSection(sectionVisit);
+
+                int start_time = ticks.get();
     
                 // customer enters a section
                 section.enterSect();
@@ -186,8 +188,14 @@ public class Main {
                 // purchase is triggered -- if empty it does nothing, if has items it makes purchase
                 // decrement num items in section
                 if (section.num_items > 0) {
-                    Thread.sleep(TICK_DURATION_MILLISECONDS); // customer takes 1 tick to grab item
+                    try {
+                        Thread.sleep(TICK_DURATION_MILLISECONDS);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
                     section.num_items--;
+                    int finish_time = ticks.get();
                     System.out.println("<" + ticks + ">" + "<" + Thread.currentThread().getId() + "> Customer = " + this.id  + " Collected_from_section : " + sectionVisit + "Waited_ticks : " + (finish_time - start_time));
                 }
                 
@@ -198,7 +206,7 @@ public class Main {
     } 
 
 
-    class Delivery implements Runnable {
+    static class Delivery implements Runnable {
     private long getId = Thread.currentThread().getId();
 
     public void run() {
@@ -227,9 +235,7 @@ public class Main {
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-public void main(String[] args) {
-
-    ThriftStore thriftStore = new ThriftStore();
+public static void main(String[] args) {
     box = new Box(SECTION_NAMES);
     store = new Store();
 
@@ -244,12 +250,11 @@ public void main(String[] args) {
     // initialize customer threads
     for (int i = 1; i < NUM_CUSTOMERS + 1; i++) {
         Thread customer = new Thread(new Customer(i));
-
         customer.start();
     }
 
     // Start the simulation + clock
-    thriftStore.simulate(); 
+    simulate(); 
 }
  
 }
