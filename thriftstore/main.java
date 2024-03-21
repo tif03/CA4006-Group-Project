@@ -59,15 +59,14 @@ public class Main {
     // in charge of ONLY incrementing ticks, runs in background
     public static void simulate() {
         // comment 
-        ticks = new AtomicInteger(0); // set clock to 0
         while (ticks.get() < TOTAL_TICKS_PER_DAY) { // terminate after a day
             try {
                 Thread.sleep(TICK_DURATION_MILLISECONDS);
-                // increment tick
-                ticks.incrementAndGet();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+
+            ticks.getAndIncrement();
             
 
         }
@@ -233,6 +232,7 @@ public class Main {
                             System.out.print(section + " = " + num_items + " "); 
                         }
                     }
+
                     System.out.println();
                     box.exit();
                 // } catch (InterruptedException e) {
@@ -247,6 +247,9 @@ public class Main {
 
 
     public static void main(String[] args) {
+
+        ticks = new AtomicInteger(0); // set clock to 0
+
         box = new Box(SECTION_NAMES);
         store = new Store();
 
