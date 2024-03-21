@@ -1,3 +1,4 @@
+package store;
 import java.util.*;
 import java.util.Random;
 
@@ -6,7 +7,7 @@ class Customer implements Runnable {
 
     public static Random random = new Random();
     private final int id;
-    public long getId = Thread.currentThread().getId();
+    // public long getId = Thread.currentThread().getId();
 
     public Customer(int id) {
         this.id = id;
