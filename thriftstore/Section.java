@@ -16,12 +16,12 @@ public class Section {
     }
 
     // get section name
-    public synchronized String getSectionName() {
+    public String getSectionName() {
         return section_name;
     }
 
     // get number of items 
-    public synchronized int getNumItems() {
+    public int getNumItems() {
         return num_items;
     }  
 
@@ -32,13 +32,20 @@ public class Section {
         }
         catch (Exception e) {
             e.printStackTrace(System.out);
-            Thread.currentThread().interrupt();
         }
     }
 
     // method to exit the section
     public void exitSect() {
         sect_mutex.release();
+    }
+
+    public void addToSection(int num) {
+        this.num_items += num;
+    }
+
+    public void subFromSection(int num) {
+        this.num_items -= num;
     }
 
 }

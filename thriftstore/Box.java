@@ -23,7 +23,6 @@ public class Box {
         }
         catch (Exception e) {
             e.printStackTrace(System.out);
-            Thread.currentThread().interrupt(); // Restore interrupted status
         }
     }
 
