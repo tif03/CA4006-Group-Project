@@ -76,8 +76,7 @@ public class Main {
             }
         }
 
-        //TODO we have to change this o.o
-        return new Section("kill me", 0); 
+        return null; 
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -86,7 +85,7 @@ public class Main {
     
         private ConcurrentHashMap<String, Integer> assistant_inventory = new ConcurrentHashMap<>();
     
-        private long threadID = Thread.currentThread().getId();
+        private long threadID = Thread.currentThread().threadId();
     
         // initialize the assistant -- inventory is 0
         public Assistant() {
@@ -166,7 +165,7 @@ public class Main {
     static class Customer implements Runnable {
         private final int id;
     
-        public long getId = Thread.currentThread().getId();
+        public long getId = Thread.currentThread().threadId();
     
         public Customer(int id) {
             this.id = id;
@@ -197,7 +196,7 @@ public class Main {
 
                     section.num_items--;
                     int finish_time = ticks.get();
-                    System.out.println("<" + ticks + ">" + "<" + Thread.currentThread().getId() + "> Customer = " + this.id  + " Collected_from_section : " + sectionVisit + "Waited_ticks : " + (finish_time - start_time));
+                    System.out.println("<" + ticks + ">" + "<" + Thread.currentThread().threadId() + "> Customer = " + this.id  + " Collected_from_section : " + sectionVisit + "Waited_ticks : " + (finish_time - start_time));
                 }
                 
                 // customer exits
@@ -208,20 +207,20 @@ public class Main {
 
 
     static class Delivery implements Runnable {
-    private long getId = Thread.currentThread().getId();
+    private long getId = Thread.currentThread().threadId();
 
     public void run() {
         while (true) {
-            if (random.nextDouble() < 1.0 / AVERAGE_DELIVERY_INTERVAL) {
-                try {
+            try {
+                    Thread.sleep(TICK_DURATION_MILLISECONDS * 100);
                     delivery();
 
-                    System.out.print("<" + ticks + ">" + "<" + Thread.currentThread().getId() + ">" + "Deposit_of_items : ");
+                    System.out.print("<" + ticks + ">" + "<" + Thread.currentThread().threadId() + ">" + "Deposit_of_items : ");
                     for (Entry<String, Integer> item : box.items.entrySet()){
                         String section = item.getKey();
                         int num_items = item.getValue();
                         if (num_items > 0){
-                            System.out.print(section + " = " + num_items + ", "); 
+                            System.out.print(section + " = " + num_items + " "); 
                         }
                     }
                     System.out.println();
@@ -231,40 +230,39 @@ public class Main {
             }
         }
     }
-}
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-public static void main(String[] args) {
-    box = new Box(SECTION_NAMES);
-    store = new Store();
+    public static void main(String[] args) {
+        box = new Box(SECTION_NAMES);
+        store = new Store();
 
-    List<Thread> customer_threads = new ArrayList<>();
+        List<Thread> customer_threads = new ArrayList<>();
 
-    // Main Delivery thread
-    Thread deliveryThread = new Thread(new Delivery());
-    deliveryThread.start();
+        // Main Delivery thread
+        Thread deliveryThread = new Thread(new Delivery());
+        deliveryThread.start();
 
-    // initalize assistant thread
-    Thread assistant = new Thread(new Assistant());
-    assistant.start();
+        // initalize assistant thread
+        Thread assistant = new Thread(new Assistant());
+        assistant.start();
 
-    // initialize customer threads
-    for (int i = 1; i < NUM_CUSTOMERS + 1; i++) {
-        Thread customer = new Thread(new Customer(i));
-        customer_threads.add(customer);
-        customer.start();
+        // initialize customer threads
+        for (int i = 1; i < NUM_CUSTOMERS + 1; i++) {
+            Thread customer = new Thread(new Customer(i));
+            customer_threads.add(customer);
+            customer.start();
+        }
+
+        // Start the simulation + clock
+        simulate(); 
+
+        deliveryThread.interrupt();
+        assistant.interrupt();
+        for (int i = 0; i < NUM_CUSTOMERS; i++) {
+            customer_threads.get(i).interrupt();
+        } 
     }
-
-    // Start the simulation + clock
-    simulate(); 
-
-    deliveryThread.interrupt();
-    assistant.interrupt();
-    for (int i = 0; i < NUM_CUSTOMERS; i++) {
-        customer_threads.get(i).interrupt();
-    } 
-}
  
 }

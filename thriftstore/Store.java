@@ -21,7 +21,6 @@ public class Store {
                 return sect;
             }
         }
-        //TODO we have to change this o.o
-        return new Section("kill me", 0); 
+        return null; 
     }
 }
