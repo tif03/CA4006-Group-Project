@@ -55,6 +55,7 @@ public class Main {
     // TODO figure out if this actually works
     // in charge of ONLY incrementing ticks, runs in background
     public static void simulate() {
+        // comment 
         ticks = new AtomicInteger(0); // set clock to 0
         while (ticks.get() < TOTAL_TICKS_PER_DAY) { // terminate after a day
             try {
