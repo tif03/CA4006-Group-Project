@@ -1,3 +1,8 @@
+package thriftstore;
+
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
+
 // class defining features and methods of the box
 public class Box {
     public Semaphore mutex = new Semaphore(1);

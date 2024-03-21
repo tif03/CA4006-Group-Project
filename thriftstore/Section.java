@@ -1,3 +1,7 @@
+package thriftstore;
+
+import java.util.concurrent.Semaphore;
+
 // class defining features and methods of section
 public class Section {
     public Semaphore sect_mutex = new Semaphore(1);

@@ -1,3 +1,8 @@
+package thriftstore;
+
+import java.security.KeyStore.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+
 class Assistant implements Runnable {
     private ConcurrentHashMap<String, Integer> assistant_inventory = new ConcurrentHashMap<>();
 

@@ -1,3 +1,5 @@
+package thriftstore;
+
 class Customer implements Runnable {
     private final int id;
 

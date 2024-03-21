@@ -1,3 +1,4 @@
+package thriftstore;
 import java.util.concurrent.*;
 import java.util.Random;
 import java.util.ArrayList;
@@ -5,27 +6,27 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
-
-public class ThriftStore {
+// TODO -- figure out how variables translate to respective class
+public class main {
     AtomicInteger ticks = new AtomicInteger(0); // set clock to 0
 
-    private static final String[] SECTION_NAMES = {"Electronics", "Clothing", "Furniture", "Toys", "Sporting Goods", "Books"};
-    private static final int SECTION_NUM = 6;
+    public static final String[] SECTION_NAMES = {"Electronics", "Clothing", "Furniture", "Toys", "Sporting Goods", "Books"};
+    public static final int SECTION_NUM = 6;
 
-    private static final int TOTAL_TICKS_PER_DAY = 1000;    // 1000 ticks per day
-    private static final int TICK_DURATION_MILLISECONDS = 100; // 100 Milliseconds per tick
-    private static final int AVERAGE_DELIVERY_INTERVAL = 100;
-    private static final int AVERAGE_PURCHASE_INTERVAL = 10;
-    private static final int MAX_ITEMS_PER_DELIVERY = 10;
-    private static final int MAX_ITEMS_ASSISTANT_CARRY = 10;
+    public static final int TOTAL_TICKS_PER_DAY = 1000;    // 1000 ticks per day
+    public static final int TICK_DURATION_MILLISECONDS = 100; // 100 Milliseconds per tick
+    public static final int AVERAGE_DELIVERY_INTERVAL = 100;
+    public static final int AVERAGE_PURCHASE_INTERVAL = 10;
+    public static final int MAX_ITEMS_PER_DELIVERY = 10;
+    public static final int MAX_ITEMS_ASSISTANT_CARRY = 10;
 
-    private static final int NUM_CUSTOMERS = 6;
+    public static final int NUM_CUSTOMERS = 6;
 
-    private Random random = new Random();
+    public Random random = new Random();
 
     // Define global variables to keep track of sections and items
-    private static Box box;
-    private static Store store;
+    public static Box box;
+    public static Store store;
 
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

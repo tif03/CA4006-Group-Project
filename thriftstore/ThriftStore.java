@@ -1,3 +1,5 @@
+package thriftstore;
+
 import java.util.concurrent.*;
 import java.util.Random;
 import java.util.ArrayList;
@@ -5,8 +7,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
-// TODO -- figure out how variables translate to respective class
-public class Main {
+public class ThriftStore {
     AtomicInteger ticks = new AtomicInteger(0); // set clock to 0
 
     private static final String[] SECTION_NAMES = {"Electronics", "Clothing", "Furniture", "Toys", "Sporting Goods", "Books"};

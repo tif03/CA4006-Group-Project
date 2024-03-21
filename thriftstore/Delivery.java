@@ -1,3 +1,5 @@
+package thriftstore;
+
 class Delivery implements Runnable {
     private long getId = Thread.currentThread().getId();
 

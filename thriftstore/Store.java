@@ -1,4 +1,8 @@
-// class defining thrift store
+package thriftstore;
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class Store {
     private List<Section> sections = new ArrayList<>(); // list of sections
 
