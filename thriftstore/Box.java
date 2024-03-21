@@ -3,10 +3,12 @@ package thriftstore;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 
+import java.util.*;
+
 // class defining features and methods of the box
 public class Box {
     public Semaphore mutex;
-    public ConcurrentHashMap<String, Integer> items = new ConcurrentHashMap<>();
+    public Map<String, Integer> items = new Hashtable<>();
 
     // Constructor to initialize the section items
     public Box(String[] sectionNames) {
@@ -32,15 +34,12 @@ public class Box {
     }
 
     public void addItem(String section, int numItems) {
-        synchronized (items) {
-            items.put(section, items.getOrDefault(section, 0) + numItems);
-        }
+        int prev = items.get(section);
+        items.put(section, prev + numItems);
     }
 
     public void removeItems(String section, int numItems) {
-        synchronized (items) {
-            int currentItems = items.getOrDefault(section, 0);
-            items.put(section, Math.max(currentItems - numItems, 0));
-        }
+        int prev = items.get(section);
+        items.put(section, prev - numItems);
     }
 }

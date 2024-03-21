@@ -2,7 +2,6 @@ package thriftstore;
 import java.util.concurrent.*;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import java.util.*;
 
 import thriftstore.Main.Assistant;
@@ -27,33 +26,28 @@ public class Main {
 
     public static final int NUM_CUSTOMERS = 6;
 
-    public static Random random = new Random();
+    public static Random random = new Random(123);
 
     // Define global variables to keep track of sections and items
     public static Box box;
-    public static List<Section> store;
-
+    public static List<Section> store = new ArrayList<>();
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //method to make delivery -- it only populates the box
     public static synchronized void delivery() {
-        int remain = MAX_ITEMS_PER_DELIVERY;    // remaining space out of 10
-        while (remain > 0){
 
+        for (int i = 1; i <= 10; i++) {
             String section = SECTION_NAMES[random.nextInt(SECTION_NAMES.length)];
-            int items = random.nextInt(remain + 1);
-            box.addItem(section, items); // putting items into the box
-            
-            remain -= items;
+            box.addItem(section, 1);
         }
 
         delivery_made = true;
-        System.out.println("<" + Main.ticks.get() + ">" + "<Thread_ID>" + "Deposit_of_items : ");
-        for (Entry<String, Integer> entry : box.items.entrySet()) {
-            String item = entry.getKey();
-            int quantity = entry.getValue();
-            System.out.print(item + " = " + quantity + " ");
+
+        System.out.print("<" + Main.ticks.get() + ">" + "<" + Thread.currentThread().getId()+ ">" + "Deposit_of_items : ");
+        for (String key : box.items.keySet()) {
+            int quantity = box.items.get(key);
+            System.out.print(key + " = " + quantity + " ");
         } 
         System.out.println();
     }
@@ -69,7 +63,10 @@ public class Main {
             }
 
             ticks.incrementAndGet();
-            
+            System.out.println(ticks.get());
+            if (ticks.get() % 100 == 0) {
+                delivery();
+            }
         }
     }
 
@@ -107,7 +104,6 @@ public class Main {
         while (true) {
     
             // assistant grabs 10 random items from box
-            // TODO figure out a semaphore for the box
             if (delivery_made) {
     
                 delivery_made = false; // once an assistant accounts for a delivery back to false until next one
@@ -118,7 +114,7 @@ public class Main {
                     int temp = assistant_inventory.get(randomSection); // previous inventory value
     
                     if (box.items.get(randomSection) > 0) {
-                        box.addItem(randomSection, temp - 1);
+                        box.removeItems(randomSection, 1);
                         assistant_inventory.put(randomSection, temp + 1); // increment
                     } else {
                         items--;
@@ -127,8 +123,8 @@ public class Main {
             }
     
             // TODO ticks and stuff
-    
-            int remain = MAX_ITEMS_ASSISTANT_CARRY; 
+        
+            // stocking shelves
             for (Entry<String, Integer> entry : ((Hashtable<String, Integer>) assistant_inventory).entrySet()){
                 String inv_section_name = entry.getKey();
                 int inv_num_items = entry.getValue();

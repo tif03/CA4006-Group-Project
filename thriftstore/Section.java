@@ -9,7 +9,7 @@ public class Section {
     public int num_items;
 
     // Constructor to initalize each section
-    Section(String name, int items){
+    public Section(String name, int items){
         this.sect_mutex = new Semaphore(1);
         this.section_name = name;
         this.num_items = items;
