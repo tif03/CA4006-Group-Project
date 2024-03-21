@@ -55,7 +55,7 @@ public class Main {
     // TODO figure out if this actually works
     // in charge of ONLY incrementing ticks, runs in background
     public static void simulate() {
-        while (ticks.get() <= TOTAL_TICKS_PER_DAY) { // terminate after a day
+        while (ticks.get() < TOTAL_TICKS_PER_DAY) { // terminate after a day
             // current tick
             ticks.incrementAndGet();
 
@@ -63,9 +63,7 @@ public class Main {
             // stocking event if box is full
 
             // code to trigger a customer thread
-
         }
-
     }
 
     public static Section findSection(String sect_name){
@@ -255,6 +253,8 @@ public static void main(String[] args) {
 
     // Start the simulation + clock
     simulate(); 
+
+    System.out.println("done");
 }
  
 }
