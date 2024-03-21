@@ -119,6 +119,7 @@ public class Main {
                         items--;
                     }
                 }
+                System.out.println("<" + ticks + ">" + "<" + Thread.currentThread().getId() + "> Assistant = " + getId  + " collected_items waited_ticks=");
     
                 // assistant exits box
                 box.exit();
@@ -142,6 +143,8 @@ public class Main {
                     
                         // assistant enters section
                         stock_sect.enterSect();
+
+                        System.out.println("<" + ticks + ">" + "<" + Thread.currentThread().getId() + "> Assistant = " + getId  + " began_stocking_section : ");
     
                         stock_sect.num_items += inv_num_items;
     
@@ -149,8 +152,11 @@ public class Main {
     
                         assistant_inventory.put(inv_section_name, 0); // clear the assistant's inventory for this section
     
+                        System.out.println("<" + ticks + ">" + "<" + Thread.currentThread().getId() + "> Assistant = " + getId  + " finished_stocking_section : ");
+
                         stock_sect.exitSect();
     
+                        System.out.println("<" + ticks + ">" + "<" + Thread.currentThread().getId() + "> Assistant = " + getId  + " moved_to_section=");
                         // assistant moves from section to section 
                         try {
                             Thread.sleep(10 * TICK_DURATION_MILLISECONDS + remain * TICK_DURATION_MILLISECONDS);
