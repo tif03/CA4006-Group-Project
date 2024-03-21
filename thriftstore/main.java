@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import thriftstore.Main.Assistant;
+
 // TODO -- figure out how variables translate to respective class
 
 @SuppressWarnings("deprecation")
@@ -68,7 +70,6 @@ public class Main {
             }
             
 
-
         }
     }
 
@@ -119,18 +120,17 @@ public class Main {
                         items--;
                     }
                 }
-                System.out.println("<" + ticks + ">" + "<" + Thread.currentThread().getId() + "> Assistant = " + getId  + " collected_items waited_ticks=");
+                System.out.println("<" + ticks + ">" + "<" + Thread.currentThread().getId() + "> Assistant = " + getId  + " collected_items waited_ticks = ");
     
                 // assistant exits box
                 box.exit();
     
                 // assistant walks over to sections from box
-                try {
-                    Thread.sleep(10 * TICK_DURATION_MILLISECONDS + MAX_ITEMS_ASSISTANT_CARRY * TICK_DURATION_MILLISECONDS);
-                } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
+                // try {
+                //     Thread.sleep(10 * TICK_DURATION_MILLISECONDS + MAX_ITEMS_ASSISTANT_CARRY * TICK_DURATION_MILLISECONDS);
+                // } catch (InterruptedException e) {
+                //     e.printStackTrace();
+                // }
     
                 int remain = MAX_ITEMS_ASSISTANT_CARRY; 
                 for (Entry<String, Integer> entry : assistant_inventory.entrySet()){
@@ -144,7 +144,7 @@ public class Main {
                         // assistant enters section
                         stock_sect.enterSect();
 
-                        System.out.println("<" + ticks + ">" + "<" + Thread.currentThread().getId() + "> Assistant = " + getId  + " began_stocking_section : ");
+                        System.out.println("<" + ticks + ">" + "<" + Thread.currentThread().getId() + "> Assistant = " + getId  + " began_stocking_section : " + inv_section_name);
     
                         stock_sect.num_items += inv_num_items;
     
@@ -152,18 +152,17 @@ public class Main {
     
                         assistant_inventory.put(inv_section_name, 0); // clear the assistant's inventory for this section
     
-                        System.out.println("<" + ticks + ">" + "<" + Thread.currentThread().getId() + "> Assistant = " + getId  + " finished_stocking_section : ");
+                        System.out.println("<" + ticks + ">" + "<" + Thread.currentThread().getId() + "> Assistant = " + getId  + " finished_stocking_section : " + inv_section_name);
 
                         stock_sect.exitSect();
     
-                        System.out.println("<" + ticks + ">" + "<" + Thread.currentThread().getId() + "> Assistant = " + getId  + " moved_to_section=");
+                        System.out.println("<" + ticks + ">" + "<" + Thread.currentThread().getId() + "> Assistant = " + getId  + " moved_to_section = ");
                         // assistant moves from section to section 
-                        try {
-                            Thread.sleep(10 * TICK_DURATION_MILLISECONDS + remain * TICK_DURATION_MILLISECONDS);
-                        } catch (InterruptedException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        }
+                        // try {
+                        //     Thread.sleep(10 * TICK_DURATION_MILLISECONDS + remain * TICK_DURATION_MILLISECONDS);
+                        // } catch (InterruptedException e) {
+                        //     e.printStackTrace();
+                        // }
     
                     }
                 }
@@ -197,11 +196,11 @@ public class Main {
                 // purchase is triggered -- if empty it does nothing, if has items it makes purchase
                 // decrement num items in section
                 if (section.num_items > 0) {
-                    try {
-                        Thread.sleep(TICK_DURATION_MILLISECONDS);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                    // try {
+                    //     Thread.sleep(TICK_DURATION_MILLISECONDS);
+                    // } catch (InterruptedException e) {
+                    //     e.printStackTrace();
+                    // }
 
                     section.num_items--;
                     // int finish_time = ticks.get();
@@ -219,8 +218,11 @@ public class Main {
     static class Delivery implements Runnable {
         public void run() {
             while (!Thread.currentThread().isInterrupted()) {
-                try {
-                    Thread.sleep(TICK_DURATION_MILLISECONDS * 100);
+                // try {
+                    // Thread.sleep(TICK_DURATION_MILLISECONDS * 100);
+                    
+                    box.enter();
+
                     delivery();
     
                     System.out.print("<" + ticks + ">" + "<" + Thread.currentThread().getName() + ">" + " Deposit_of_items : ");
@@ -232,11 +234,10 @@ public class Main {
                         }
                     }
                     System.out.println();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt(); // Restore interrupted status
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                    box.exit();
+                // } catch (InterruptedException e) {
+                //     e.printStackTrace();
+                // }
             }
         }
     }

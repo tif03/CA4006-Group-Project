@@ -5,11 +5,12 @@ import java.util.concurrent.Semaphore;
 
 // class defining features and methods of the box
 public class Box {
-    public Semaphore mutex = new Semaphore(1);
+    public Semaphore mutex;
     public ConcurrentHashMap<String, Integer> items = new ConcurrentHashMap<>();
 
     // Constructor to initialize the section items
     public Box(String[] sectionNames) {
+        this.mutex = new Semaphore(1);
         for (String section : sectionNames) {
             items.put(section, 0); // Initialize each section with 0 items
         }
@@ -22,6 +23,7 @@ public class Box {
         }
         catch (Exception e) {
             e.printStackTrace(System.out);
+            Thread.currentThread().interrupt(); // Restore interrupted status
         }
     }
 
@@ -30,13 +32,16 @@ public class Box {
         mutex.release();
     }
 
-    // method to add a certain number of items to a section of the box
     public void addItem(String section, int numItems) {
-        items.put(section, items.get(section) + numItems);
+        synchronized (items) {
+            items.put(section, items.getOrDefault(section, 0) + numItems);
+        }
     }
 
-    // method to remove a certain number of items
     public void removeItems(String section, int numItems) {
-        items.put(section, Math.max((items.get(section) - numItems), 0));
+        synchronized (items) {
+            int currentItems = items.getOrDefault(section, 0);
+            items.put(section, Math.max(currentItems - numItems, 0));
+        }
     }
 }
