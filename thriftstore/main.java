@@ -54,14 +54,20 @@ public class Main {
 
     // TODO figure out if this actually works
     // in charge of ONLY incrementing ticks, runs in background
-    public static synchronized void simulate() {
+    public static void simulate() {
         ticks = new AtomicInteger(0); // set clock to 0
         while (ticks.get() < TOTAL_TICKS_PER_DAY) { // terminate after a day
-            // current tick
-            ticks.incrementAndGet();
+            try {
+                Thread.sleep(TICK_DURATION_MILLISECONDS);
+                // increment tick
+                ticks.incrementAndGet();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            
+
 
         }
-
     }
 
     public static synchronized Section findSection(String sect_name){
@@ -175,7 +181,7 @@ public class Main {
                 // find the section object corresponding to the chosen section name
                 Section section = findSection(sectionVisit);
 
-                int start_time = ticks.get();
+                // int start_time = ticks.get();
     
                 // customer enters a section
                 section.enterSect();
@@ -190,8 +196,9 @@ public class Main {
                     }
 
                     section.num_items--;
-                    int finish_time = ticks.get();
-                    System.out.println("<" + ticks + ">" + "<" + Thread.currentThread().getId() + "> Customer = " + this.id  + " Collected_from_section : " + sectionVisit + "Waited_ticks : " + (finish_time - start_time));
+                    // int finish_time = ticks.get();
+                    System.out.println("<" + ticks + ">" + "<" + Thread.currentThread().getId() + "> Customer = " + this.id  + " Collected_from_section : " + sectionVisit);
+                    //  + " Waited_ticks : " + (finish_time - start_time)
                 }
                 
                 // customer exits
