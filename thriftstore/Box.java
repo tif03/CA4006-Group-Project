@@ -42,4 +42,16 @@ public class Box {
         int prev = items.get(section);
         items.put(section, prev - numItems);
     }
+
+    public Boolean boxEmpty() {
+        for (Map.Entry<String, Integer> entry : items.entrySet()) {
+            Integer num = entry.getValue();
+
+            if (num > 0){
+                return false;
+            }
+
+        }
+        return true;
+    }
 }

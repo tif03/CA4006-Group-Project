@@ -15,9 +15,6 @@ public class Main {
     public static final String[] SECTION_NAMES = {"Electronics", "Clothing", "Furniture", "Toys", "Sporting Goods", "Books"};
     public static final int SECTION_NUM = 6;
 
-    public static Boolean delivery_made = false;
-    public static Boolean has_items = false;
-
     public static final int TOTAL_TICKS_PER_DAY = 1000;    // 1000 ticks per day
     public static final long TICK_DURATION_MILLISECONDS = 100; // 100 Milliseconds per tick
     public static final int AVERAGE_DELIVERY_INTERVAL = 100;
@@ -53,6 +50,7 @@ public class Main {
     // in charge of ONLY incrementing ticks, runs in background
     public static void simulate() {
         while (ticks.get() < TOTAL_TICKS_PER_DAY) { // terminate after a day
+
             try {
                 Thread.sleep(TICK_DURATION_MILLISECONDS);
             } catch (InterruptedException e) {
@@ -61,7 +59,6 @@ public class Main {
 
             ticks.incrementAndGet();
 
-            System.out.println(ticks.get());
             if (ticks.get() % 100 == 0) {
                 delivery();
             }
@@ -83,31 +80,52 @@ public class Main {
     static class Assistant implements Runnable {
 
         public static Random random = new Random();
+        private final int id;
     
-        private Dictionary<String, Integer> assistant_inventory = new Hashtable<>();
+        public static Map<String, Integer> assistant_inventory = new HashMap<>();
     
         private long getId = Thread.currentThread().getId();
         private int MAX_ITEMS_ASSISTANT_CARRY = 10;
     
         // initialize the assistant -- inventory is 0
-        public Assistant() {
+        public Assistant(int id) {
+            this.id = id;
             for (String section : SECTION_NAMES) {
                 assistant_inventory.put(section, 0);
             }
+        }
+
+        public static Boolean inventoryEmpty(){
+            for (Map.Entry<String, Integer> entry : assistant_inventory.entrySet()){
+                Integer num = entry.getValue();
+
+                if (num > 0){
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        public static int getInventoryValue() {
+            int sum = 0;
+            for (Map.Entry<String, Integer> entry : assistant_inventory.entrySet()){
+                Integer num = entry.getValue();
+
+                sum += num;
+            }
+            return sum;
         }
     
     
         @Override
         public synchronized void run() {
-            System.out.println("Assistant Thread started");
             while (true) {
-        
                 // assistant grabs 10 random items from box
-                if (delivery_made) {
-                    box.enter();
-                    has_items = true;
 
-                    System.out.println("Assistant picks up delivery");
+                if (!box.boxEmpty()) {
+                    box.enter();
+
         
                     for (int items = 0; items < MAX_ITEMS_ASSISTANT_CARRY; items++) {
                         String randomSection = SECTION_NAMES[random.nextInt(SECTION_NAMES.length)];
@@ -121,29 +139,34 @@ public class Main {
                             items--;
                         }
                     }
-
-                    delivery_made = false; // once an assistant accounts for a delivery back to false until next one
                     box.exit();
                 }
         
-                // TODO ticks and stuff
+                // walk over to sections
+                try {
+                    Thread.sleep(10 * TICK_DURATION_MILLISECONDS + MAX_ITEMS_ASSISTANT_CARRY * TICK_DURATION_MILLISECONDS); // 10 seconds + amount of items carrying
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
         
-                if (has_items) {
-                    System.out.println("Assistant begins stocking shelves");
+                if (!inventoryEmpty()) {
+
+                    int inventory = 0;
+    
                     // stocking shelves
-                    for (Entry<String, Integer> entry : ((Hashtable<String, Integer>) assistant_inventory).entrySet()){
+                    for (Entry<String, Integer> entry : assistant_inventory.entrySet()){
                         String inv_section_name = entry.getKey();
                         int inv_num_items = entry.getValue();
 
                         // TODO enter section
                         Section enter_section = findSection(inv_section_name);
                         enter_section.enterSect();
-                        System.out.println("<" + ticks.get() +"> <" + Thread.currentThread().getId() + "> Assistant=1" + " began_stocking_section : " + inv_section_name);
+                        System.out.println("<" + ticks.get() +"> <" + Thread.currentThread().getId() + "> Assistant=" + id + " began_stocking_section : " + inv_section_name);
 
                         if (inv_num_items > 0) {
 
                             Section temp_section = findSection(inv_section_name);
-                            int temp = temp_section.num_items;
 
                             // assistant stocks the thrift store shelves with items in inventory
                             for (Section section : store){
@@ -152,16 +175,30 @@ public class Main {
                                 }
                             }
 
+                            try {
+                                Thread.sleep(inv_num_items * TICK_DURATION_MILLISECONDS); // 10 seconds + amount of items carrying
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            
+
                             assistant_inventory.put(inv_section_name, 0); // clear the assistant's inventory for this section
+                            inventory = getInventoryValue();
+
 
                         }
 
+                        System.out.println("<" + ticks.get() +"> <" + Thread.currentThread().getId() + "> Assistant=1" + " finished_stocking_section : " + inv_section_name);
                         // TODO exit section
                         enter_section.exitSect();
-                        // TODO print
-                        System.out.println("<" + ticks.get() +"> <" + Thread.currentThread().getId() + "> Assistant=1" + " finished_stocking_section : " + inv_section_name);
+            
+                        
+                        try {
+                            Thread.sleep(10 * TICK_DURATION_MILLISECONDS + inventory * TICK_DURATION_MILLISECONDS); // 10 seconds + amount of items carrying
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
-                    has_items = false;
                 }
                 
             }
@@ -180,29 +217,59 @@ public class Main {
         }
     
         @Override
-        public void run() {
+        public synchronized void run() {
             while (true) {
                 // choose random section to visit
-                String sectionVisit = SECTION_NAMES[random.nextInt(SECTION_NAMES.length)];
-    
-                // TODO enter section
+                // String sectionVisit = SECTION_NAMES[random.nextInt(SECTION_NAMES.length)];
+                String sectionVisit;
+                Section enter_section;
 
-                for (Section section : store){
-                    if (section.num_items > 0 && section.section_name.equals(sectionVisit)){
-                        section.subFromSection(1);
+                // enter section
+                // Section enter_section = findSection(sectionVisit);
+
+                do {
+                    sectionVisit = SECTION_NAMES[random.nextInt(SECTION_NAMES.length)];
+                    enter_section = findSection(sectionVisit);
+                } while (enter_section.num_items == 0); // Keep selecting until non-empty section found
+
+                int start_time = ticks.get();
+
+                if (enter_section.num_items > 0){    
+                    enter_section.enterSect();
+                    
+                    for (Section section : store){
+                        if (enter_section.num_items > 0 && section.section_name.equals(sectionVisit)){
+                            section.subFromSection(1);
+
+                            int finish_time = ticks.get();
+
+                            // 1 tick to grab
+                            try {
+                                Thread.sleep(TICK_DURATION_MILLISECONDS);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+
+                            System.out.println("<" + ticks.get() +"> <" + Thread.currentThread().getId() + "> Customer=" + id + " collected_from_section : " + sectionVisit + " waited_ticks : " + (finish_time - start_time));
+                        }
+                    }
+                    
+                    // exit section
+                    enter_section.exitSect();
+
+                    try {
+                        long sleepDuration = (long) (10 + (random.nextGaussian() * 3));
+                        Thread.sleep(sleepDuration * TICK_DURATION_MILLISECONDS);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
                 }
-    
-    
-                // TODO print
-                // TODO exit section
             }
         }
     } 
     
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
     public static void main(String[] args) {
 
@@ -214,17 +281,21 @@ public class Main {
             store.add(new Section (section_name, 5));
         } 
 
+        List<Thread> assistant_threads = new ArrayList<>();
+
         List<Thread> customer_threads = new ArrayList<>();
 
         // Main Delivery thread
         // Thread deliveryThread = new Thread(new Delivery());
         // deliveryThread.start();
 
-        // initalize assistant thread
-        Thread assistant = new Thread(new Assistant());
-        assistant.start();
+        for (int i = 1; i < 2; i++) {
+            Thread assistant = new Thread(new Assistant(i));
+            assistant_threads.add(assistant);
+            assistant.start();
+        }
 
-        // initialize customer threads
+        // TODO add more initialize customer threads
         for (int i = 1; i < NUM_CUSTOMERS + 1; i++) {
             Thread customer = new Thread(new Customer(i));
             customer_threads.add(customer);
@@ -236,3 +307,4 @@ public class Main {
     }
  
 }
+
