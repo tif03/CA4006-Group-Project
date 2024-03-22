@@ -118,24 +118,24 @@ public class Main {
                 // assistant grabs 10 random items from box
 
                 if (!box.boxEmpty()) {
-                    box.enter();
+                box.enter();
 
-        
-                    for (int items = 0; items < MAX_ITEMS_ASSISTANT_CARRY; items++) {
-                        String randomSection = SECTION_NAMES[random.nextInt(SECTION_NAMES.length)];
-        
-                        int temp = assistant_inventory.get(randomSection); // previous inventory value
-        
-                        if (box.items.get(randomSection) > 0) {
-                            box.removeItems(randomSection, 1);
-                            assistant_inventory.put(randomSection, temp + 1); // increment
-                        } else {
-                            items--;
-                        }
+    
+                for (int items = 0; items < MAX_ITEMS_ASSISTANT_CARRY; items++) {
+                    String randomSection = SECTION_NAMES[random.nextInt(SECTION_NAMES.length)];
+    
+                    int temp = assistant_inventory.get(randomSection); // previous inventory value
+    
+                    if (box.items.get(randomSection) > 0) {
+                        box.removeItems(randomSection, 1);
+                        assistant_inventory.put(randomSection, temp + 1); // increment
+                    } else {
+                        items--;
                     }
-                    box.exit();
                 }
-        
+                box.exit();
+                }
+    
                 // walk over to sections
                 try {
                     Thread.sleep(10 * TICK_DURATION_MILLISECONDS + MAX_ITEMS_ASSISTANT_CARRY * TICK_DURATION_MILLISECONDS); // 10 seconds + amount of items carrying
@@ -143,7 +143,7 @@ public class Main {
                     e.printStackTrace();
                 }
 
-        
+    
                 if (!inventoryEmpty()) {
 
                     int inventory = 0;
@@ -191,8 +191,7 @@ public class Main {
                             e.printStackTrace();
                         }
                     }
-                }
-                
+            }
             }
         }
     }
@@ -251,6 +250,7 @@ public class Main {
                         e.printStackTrace();
                     }
                 }
+                
             }
         }
     } 
@@ -258,6 +258,7 @@ public class Main {
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    @SuppressWarnings("deprecation")
     public static void main(String[] args) {
 
         // set clock to 0
@@ -298,6 +299,7 @@ public class Main {
             customer.stop();
         }
 
+        System.out.println("Simulation Complete");
 
     }
  
