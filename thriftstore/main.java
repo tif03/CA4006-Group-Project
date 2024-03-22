@@ -59,7 +59,8 @@ public class Main {
 
             ticks.incrementAndGet();
 
-            if (ticks.get() % 100 == 0) {
+            Random random = new Random();
+            if (random.nextDouble() <= 0.01) {
                 delivery();
             }
         }
