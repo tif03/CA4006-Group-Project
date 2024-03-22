@@ -288,12 +288,12 @@ public class Main {
         // start the simulation + clock
         simulate(); 
 
-        // starting Assistant threads
+        // stopping Assistant threads
         for (Thread assistant : assistant_threads) {
             assistant.stop();
         }
 
-        // starting Customer threads
+        // stopping Customer threads
         for (Thread customer : customer_threads) {
             customer.stop();
         }
