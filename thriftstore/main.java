@@ -6,9 +6,6 @@ import java.util.*;
 
 import thriftstore.Main.Assistant;
 
-// TODO -- figure out how variables translate to respective class
-
-@SuppressWarnings("deprecation")
 public class Main {
     public static AtomicInteger ticks;
 
@@ -17,8 +14,6 @@ public class Main {
 
     public static final int TOTAL_TICKS_PER_DAY = 1000;    // 1000 ticks per day
     public static final long TICK_DURATION_MILLISECONDS = 100; // 100 Milliseconds per tick
-    public static final int AVERAGE_DELIVERY_INTERVAL = 100;
-    public static final int AVERAGE_PURCHASE_INTERVAL = 10;
     public static final int MAX_ITEMS_PER_DELIVERY = 10;
     public static final int MAX_ITEMS_ASSISTANT_CARRY = 10;
 
@@ -46,10 +41,9 @@ public class Main {
         box.exit();
     }
 
-    // TODO figure out if this actually works
-    // in charge of ONLY incrementing ticks, runs in background
+    // in charge of incrementing ticks, runs in background
     public static void simulate() {
-        while (ticks.get() < TOTAL_TICKS_PER_DAY) { // terminate after a day
+        while (ticks.get() <= TOTAL_TICKS_PER_DAY) { // terminate after a day
 
             try {
                 Thread.sleep(TICK_DURATION_MILLISECONDS);
@@ -85,7 +79,6 @@ public class Main {
     
         public static Map<String, Integer> assistant_inventory = new HashMap<>();
     
-        private long getId = Thread.currentThread().getId();
         private int MAX_ITEMS_ASSISTANT_CARRY = 10;
     
         // initialize the assistant -- inventory is 0
@@ -160,7 +153,7 @@ public class Main {
                         String inv_section_name = entry.getKey();
                         int inv_num_items = entry.getValue();
 
-                        // TODO enter section
+                        // enter section
                         Section enter_section = findSection(inv_section_name);
                         enter_section.enterSect();
                         System.out.println("<" + ticks.get() +"> <" + Thread.currentThread().getId() + "> Assistant=" + id + " began_stocking_section : " + inv_section_name);
@@ -185,12 +178,10 @@ public class Main {
 
                             assistant_inventory.put(inv_section_name, 0); // clear the assistant's inventory for this section
                             inventory = getInventoryValue();
-
-
                         }
 
                         System.out.println("<" + ticks.get() +"> <" + Thread.currentThread().getId() + "> Assistant=1" + " finished_stocking_section : " + inv_section_name);
-                        // TODO exit section
+                        // exit section
                         enter_section.exitSect();
             
                         
@@ -211,7 +202,6 @@ public class Main {
 
         public static Random random = new Random();
         private final int id;
-        // public long getId = Thread.currentThread().getId();
     
         public Customer(int id) {
             this.id = id;
@@ -221,17 +211,13 @@ public class Main {
         public synchronized void run() {
             while (true) {
                 // choose random section to visit
-                // String sectionVisit = SECTION_NAMES[random.nextInt(SECTION_NAMES.length)];
                 String sectionVisit;
                 Section enter_section;
-
-                // enter section
-                // Section enter_section = findSection(sectionVisit);
 
                 do {
                     sectionVisit = SECTION_NAMES[random.nextInt(SECTION_NAMES.length)];
                     enter_section = findSection(sectionVisit);
-                } while (enter_section.num_items == 0); // Keep selecting until non-empty section found
+                } while (enter_section.num_items == 0); // keep selecting until non-empty section found
 
                 int start_time = ticks.get();
 
@@ -274,37 +260,45 @@ public class Main {
 
     public static void main(String[] args) {
 
-        ticks = new AtomicInteger(0); // set clock to 0
+        // set clock to 0
+        ticks = new AtomicInteger(0); 
 
-        // init store
-
+        // initializes every section with 5 items at the start
         for (String section_name : SECTION_NAMES) {
             store.add(new Section (section_name, 5));
         } 
 
         List<Thread> assistant_threads = new ArrayList<>();
-
         List<Thread> customer_threads = new ArrayList<>();
 
-        // Main Delivery thread
-        // Thread deliveryThread = new Thread(new Delivery());
-        // deliveryThread.start();
-
+        // starting Assistant threads
         for (int i = 1; i < 2; i++) {
             Thread assistant = new Thread(new Assistant(i));
             assistant_threads.add(assistant);
             assistant.start();
         }
 
-        // TODO add more initialize customer threads
+        // starting Customer threads
         for (int i = 1; i < NUM_CUSTOMERS + 1; i++) {
             Thread customer = new Thread(new Customer(i));
             customer_threads.add(customer);
             customer.start();
         }
 
-        // Start the simulation + clock
+        // start the simulation + clock
         simulate(); 
+
+        // starting Assistant threads
+        for (Thread assistant : assistant_threads) {
+            assistant.stop();
+        }
+
+        // starting Customer threads
+        for (Thread customer : customer_threads) {
+            customer.stop();
+        }
+
+
     }
  
 }
